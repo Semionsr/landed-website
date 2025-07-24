@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landed - Your Personal Job Search Copilot</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <style>
+        /* Custom animations */
+        @keyframes liquid-slow {
+            0%, 100% { 
+                transform: translate(0, 0) rotate(0deg) scale(1);
+            }
+            33% { 
+                transform: translate(100px, 50px) rotate(120deg) scale(1.2);
+            }
+            66% { 
+                transform: translate(-50px, 100px) rotate(240deg) scale(0.8);
+            }
+        }
+        
+        @keyframes liquid-medium {
+            0%, 100% { 
+                transform: translate(0, 0) rotate(0deg) scale(1);
+            }
+            33% { 
+                transform: translate(-100px, -50px) rotate(-120deg) scale(0.9);
+            }
+            66% { 
+                transform: translate(50px, -100px) rotate(-240deg) scale(1.1);
+            }
+        }
+        
+        @keyframes liquid-fast {
+            0%, 100% { 
+                transform: translate(0, 0) rotate(0deg) scale(1);
+            }
+            25% { 
+                transform: translate(75px, -75px) rotate(90deg) scale(1.3);
+            }
+            50% { 
+                transform: translate(-75px, -75px) rotate(180deg) scale(0.7);
+            }
+            75% { 
+                transform: translate(-75px, 75px) rotate(270deg) scale(1.1);
+            }
+        }
+        
+        @keyframes flow-particle {
+            0% {
+                transform: translate(0, 0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translate(100vw, 100vh);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes float-blob {
+            0%, 100% { 
+                transform: translate(0, 0) rotate(0deg) scale(1);
+            }
+            20% { 
+                transform: translate(30px, -40px) rotate(90deg) scale(1.1);
+            }
+            40% { 
+                transform: translate(-20px, -60px) rotate(180deg) scale(0.95);
+            }
+            60% { 
+                transform: translate(-40px, 20px) rotate(270deg) scale(1.05);
+            }
+            80% { 
+                transform: translate(20px, 40px) rotate(360deg) scale(0.9);
+            }
+        }
+        
+        @keyframes ripple {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(15);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes celebrate {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes fireworkParticle {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+        }
+        
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes dropdown-fade {
+            from { 
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-liquid-slow {
+            animation: liquid-slow 30s ease-in-out infinite;
+        }
+        
+        .animate-liquid-medium {
+            animation: liquid-medium 25s ease-in-out infinite;
+        }
+        
+        .animate-liquid-fast {
+            animation: liquid-fast 20s ease-in-out infinite;
+        }
+        
+        .animate-flow-particle {
+            animation: flow-particle linear infinite;
+        }
+        
+        .animate-float-blob {
+            animation: float-blob linear infinite;
+        }
+        
+        .animate-ripple {
+            animation: ripple 6s ease-out infinite;
+        }
+        
+        .animate-celebrate {
+            animation: celebrate ease-out forwards;
+        }
+        
+        .animate-fade-in {
+            animation: fade-in 0.8s ease-out forwards;
+        }
+        
+        .animate-dropdown {
+            animation: dropdown-fade 0.3s ease-out forwards;
+        }
+        
+        /* Touch interaction improvements */
+        .swipe-container {
+            touch-action: pan-y pinch-zoom;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            transition: transform 0.2s ease-out;
+        }
+        
+        .swipe-container:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, createElement: h } = React;
+        const { createRoot } = ReactDOM;
+
+        // Initialize Supabase client
+        const supabaseUrl = 'https://nplmjuwropfcjydtrxdf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wbG1qdXdyb3BmY2p5ZHRyeGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzNjcxNjUsImV4cCI6MjA2ODk0MzE2NX0.ueknCyZbc0dUrKZoKjThUnpjmjTOmbyoIA0Mceg3P34';
+        
+        // Initialize Supabase client with proper error handling
+        let supabase;
+        
+        const initializeSupabase = () => {
+            try {
+                if (window.supabase && window.supabase.createClient) {
+                    supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                    console.log('Supabase client initialized successfully');
+                } else {
+                    console.error('Supabase createClient not available');
+                    // Retry after a short delay
+                    setTimeout(initializeSupabase, 100);
+                }
+            } catch (error) {
+                console.error('Error initializing Supabase client:', error);
+            }
+        };
+        
+        // Initialize immediately or after a short delay
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeSupabase);
+        } else {
+            initializeSupabase();
+        }
+
+        // Create Lucide icon components
+        const ChevronLeft = ({ className, size = 24 }) => h('i', { 
+            'data-lucide': 'chevron-left', 
+            className, 
+            style: { width: size, height: size }
+        });
+        
+        const ChevronRight = ({ className, size = 24 }) => h('i', { 
+            'data-lucide': 'chevron-right', 
+            className, 
+            style: { width: size, height: size }
+        });
+        
+        const ChevronDown = ({ className, size = 24 }) => h('i', { 
+            'data-lucide': 'chevron-down', 
+            className, 
+            style: { width: size, height: size }
+        });
+        
+        const Target = ({ className, size = 24 }) => h('i', { 
+            'data-lucide': 'target', 
+            className, 
+            style: { width: size, height: size }
+        });
+        
+        const Briefcase = ({ className, size = 24 }) => h('i', { 
+            'data-lucide': 'briefcase', 
+            className, 
+            style: { width: size, height: size }
+        });
+        
+        const Award = ({ className, size = 24 }) => h('i', { 
+            'data-lucide': 'award', 
+            className, 
+            style: { width: size, height: size }
+        });
+        
+        const CheckCircle = ({ className, size = 24 }) => h('i', { 
+            'data-lucide': 'check-circle', 
+            className, 
+            style: { width: size, height: size }
+        });
+        
+        const Sparkles = ({ className, size = 24 }) => h('i', { 
+            'data-lucide': 'sparkles', 
+            className, 
+            style: { width: size, height: size }
+        });
+        
+        const ArrowRight = ({ className, size = 24 }) => h('i', { 
+            'data-lucide': 'arrow-right', 
+            className, 
+            style: { width: size, height: size }
+        });
+
+        const App = () => {
+            const [currentFeature, setCurrentFeature] = useState(0);
+            const [currentQuestion, setCurrentQuestion] = useState(0);
+            const [showQuestionnaire, setShowQuestionnaire] = useState(false);
+            const [answers, setAnswers] = useState({});
+            const [email, setEmail] = useState('');
+            const [showSuccess, setShowSuccess] = useState(false);
+            const [isHovering, setIsHovering] = useState(false);
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [submitError, setSubmitError] = useState('');
+            const [openDropdowns, setOpenDropdowns] = useState({});
+            const [touchStart, setTouchStart] = useState(null);
+            const [touchEnd, setTouchEnd] = useState(null);
+
+            useEffect(() => {
+                document.title = 'Landed - Your Personal Job Search Copilot';
+                // Initialize Lucide icons after component mounts
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, []);
+
+            useEffect(() => {
+                // Re-initialize icons when component updates
+                if (window.lucide) {
+                    setTimeout(() => window.lucide.createIcons(), 0);
+                }
+            });
+
+            useEffect(() => {
+                // Re-initialize icons when feature changes
+                if (window.lucide) {
+                    setTimeout(() => window.lucide.createIcons(), 100);
+                }
+            }, [currentFeature]);
+
+            const RocketIcon = () => (
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-bounce">
+                    <path d="M40 10C40 10 50 15 55 25C60 35 60 45 60 45L50 55L30 55L20 45C20 45 20 35 25 25C30 15 40 10 40 10Z" fill="url(#rocket-gradient)" className="drop-shadow-xl"/>
+                    <path d="M35 50L35 65L40 70L45 65L45 50" fill="#60A5FA" opacity="0.8" className="animate-pulse"/>
+                    <circle cx="40" cy="30" r="8" fill="#1E40AF" opacity="0.3"/>
+                    <circle cx="40" cy="30" r="5" fill="#DBEAFE"/>
+                    <path d="M25 55L20 65L30 60M55 55L60 65L50 60" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" className="animate-pulse"/>
+                    <defs>
+                        <linearGradient id="rocket-gradient" x1="40" y1="10" x2="40" y2="55" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#3B82F6"/>
+                            <stop offset="1" stopColor="#1E40AF"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            );
+
+            const LightningIcon = () => (
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-pulse">
+                    <path 
+                        d="M50 10L25 45H40L30 70L55 35H40L50 10Z" 
+                        fill="url(#lightning-gradient)" 
+                        stroke="url(#lightning-stroke)" 
+                        strokeWidth="2"
+                        className="drop-shadow-2xl"
+                    />
+                    <path 
+                        d="M50 10L25 45H40L30 70L55 35H40L50 10Z" 
+                        fill="white" 
+                        opacity="0.3"
+                        className="animate-pulse"
+                    />
+                    <defs>
+                        <linearGradient id="lightning-gradient" x1="40" y1="10" x2="40" y2="70" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#60A5FA" />
+                            <stop offset="0.5" stopColor="#A78BFA" />
+                            <stop offset="1" stopColor="#EC4899" />
+                        </linearGradient>
+                        <linearGradient id="lightning-stroke" x1="40" y1="10" x2="40" y2="70" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#3B82F6" />
+                            <stop offset="1" stopColor="#9333EA" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+            );
+
+            const features = [
+                {
+                    iconType: "target",
+                    title: "Fix What's Broken First",
+                    description: "Your resume probably sucks (ours did too). Your LinkedIn is a ghost town. You don't know which certs matter. We'll show you exactly what to fix, what courses actually help, and which alumni will actually respond to your DMs.",
+                    dropdowns: [
+                        {
+                            title: "Resume That Gets Read",
+                            content: "Remember spending 6 hours on your resume just to get auto-rejected? Yeah, that's because you're using your school's trash template from 2003. We'll show you the exact format that gets past ATS systems and actually makes recruiters stop scrolling."
+                        },
+                        {
+                            title: "LinkedIn That Works",
+                            content: "Your LinkedIn still says 'Aspiring Professional' doesn't it? While your classmates with offers have 500+ connections and keywords that actually matter. We'll transform your ghost town profile into a recruiter magnet."
+                        },
+                        {
+                            title: "Certs That Matter",
+                            content: "Stop wasting money on random Udemy courses. We tell you exactly which certifications actually move the needle for YOUR field. Google Analytics for marketing, AWS for tech, etc. No BS, just what works."
+                        },
+                        {
+                            title: "Free Courses Worth Taking",
+                            content: "Coursera has 10,000 courses and 9,990 are useless. We've done the homework - here are the exact free courses that employers actually care about. Plus the ones that give you real projects for your portfolio."
+                        },
+                        {
+                            title: "People Who'll Actually Help",
+                            content: "Cold messaging randos on LinkedIn? Stop. We show you the exact alumni from YOUR school in YOUR field who actually respond to students. Plus the exact message templates that don't get ignored."
+                        }
+                    ]
+                },
+                {
+                    iconType: "briefcase",
+                    title: "Stop Applying to Everything",
+                    description: "No more spray and pray. We match you with internships you actually have a shot at. Fresh opportunities every single day, filtered for YOUR major and experience level. Apply smarter, not harder.",
+                    dropdowns: [
+                        {
+                            title: "500+ Daily Opportunities",
+                            content: "While you're checking the same 3 job boards, we're scanning everywhere - startup sites, company pages, hidden postings. Fresh opportunities every morning at 8am, before everyone else sees them."
+                        },
+                        {
+                            title: "Actually Qualified For",
+                            content: "No more applying to 'Entry Level' jobs requiring 5 years experience. Our AI filters out the BS and only shows you internships that ACTUALLY hire students with your exact background."
+                        },
+                        {
+                            title: "No More Black Holes",
+                            content: "Applied to 200 jobs and heard nothing? That's because you're applying to companies that already filled the role. We track which companies are actively interviewing RIGHT NOW."
+                        },
+                        {
+                            title: "Application Tracking",
+                            content: "Remember where you applied? What version of your resume you sent? When to follow up? Yeah, neither do we. That's why we built a tracker that does it all for you. Set it and forget it."
+                        }
+                    ]
+                },
+                {
+                    iconType: "award",
+                    title: "Stop Bombing Interviews",
+                    description: "Practice with our AI until you stop freezing up. We know every question they'll ask for your field. Get answers that actually land offers, not generic BS. Turn interview anxiety into interview confidence.",
+                    dropdowns: [
+                        {
+                            title: "Unlimited Practice",
+                            content: "Remember blanking when they asked 'Tell me about yourself'? Practice with our AI until that never happens again. Unlimited mock interviews, no judgment, just results."
+                        },
+                        {
+                            title: "Your Industry's Questions",
+                            content: "Tech interviews ask different questions than consulting. We have the EXACT questions from real interviews at companies you're targeting. No more generic prep that doesn't help."
+                        },
+                        {
+                            title: "Answers That Work",
+                            content: "Your friend got the offer with worse grades? It's because they knew how to answer. We give you proven answer frameworks that actually land offers, not the generic crap from career services."
+                        },
+                        {
+                            title: "Stop Freezing Up",
+                            content: "That moment when your mind goes blank and you start sweating? We train you until it stops happening. Confidence drills, anxiety management, and practice until you're unstoppable."
+                        }
+                    ]
+                }
+            ];
+
+            const questions = [
+                {
+                    question: "What is your current academic status?",
+                    options: ["Freshman", "Sophomore", "Junior", "Senior", "Recent Graduate"]
+                },
+                {
+                    question: "What is your field of study?",
+                    options: ["Business", "Engineering", "Computer Science", "Liberal Arts", "Sciences", "Other"]
+                },
+                {
+                    question: "What type of opportunity are you seeking?",
+                    options: ["Full-time", "Internship", "Part-time", "Co-op", "Contract"]
+                },
+                {
+                    question: "Which industry interests you most?",
+                    options: ["Tech", "Finance", "Healthcare", "Consulting", "Marketing", "Other"]
+                },
+                {
+                    question: "How would you rate your job search confidence level?",
+                    options: ["Very Low", "Low", "Moderate", "High", "Very High"]
+                },
+                {
+                    question: "What is your primary job search challenge?",
+                    options: ["Finding relevant opportunities", "Resume optimization", "Interview performance", "Professional networking", "Time management"]
+                },
+                {
+                    question: "When do you need to start your position?",
+                    options: ["Immediately", "Within 1-3 months", "Within 3-6 months", "Within 6-12 months", "After graduation"]
+                }
+            ];
+
+            const toggleDropdown = (featureIndex, dropdownIndex) => {
+                const key = `${featureIndex}-${dropdownIndex}`;
+                setOpenDropdowns(prev => ({
+                    ...prev,
+                    [key]: !prev[key]
+                }));
+            };
+
+            const nextFeature = () => {
+                setCurrentFeature((prev) => (prev + 1) % features.length);
+                setOpenDropdowns({});
+            };
+
+            const prevFeature = () => {
+                setCurrentFeature((prev) => (prev - 1 + features.length) % features.length);
+                setOpenDropdowns({});
+            };
+
+            // Swipe handling functions
+            const minSwipeDistance = 50;
+
+            const onTouchStart = (e) => {
+                setTouchEnd(null);
+                setTouchStart(e.targetTouches[0].clientX);
+            };
+
+            const onTouchMove = (e) => {
+                setTouchEnd(e.targetTouches[0].clientX);
+            };
+
+            const onTouchEnd = () => {
+                if (!touchStart || !touchEnd) return;
+                
+                const distance = touchStart - touchEnd;
+                const isLeftSwipe = distance > minSwipeDistance;
+                const isRightSwipe = distance < -minSwipeDistance;
+
+                if (isLeftSwipe) {
+                    nextFeature();
+                }
+                if (isRightSwipe) {
+                    prevFeature();
+                }
+            };
+
+            const handleAnswer = (answer) => {
+                setAnswers({ ...answers, [currentQuestion]: answer });
+                if (currentQuestion < questions.length - 1) {
+                    setCurrentQuestion(currentQuestion + 1);
+                } else {
+                    setShowQuestionnaire(false);
+                }
+            };
+
+            // Questionnaire navigation functions
+            const nextQuestion = () => {
+                if (currentQuestion < questions.length - 1) {
+                    setCurrentQuestion(currentQuestion + 1);
+                }
+            };
+
+            const prevQuestion = () => {
+                if (currentQuestion > 0) {
+                    setCurrentQuestion(currentQuestion - 1);
+                }
+            };
+
+            // Questionnaire swipe handling
+            const onQuestionTouchEnd = () => {
+                if (!touchStart || !touchEnd) return;
+                
+                const distance = touchStart - touchEnd;
+                const isLeftSwipe = distance > minSwipeDistance;
+                const isRightSwipe = distance < -minSwipeDistance;
+
+                if (isLeftSwipe) {
+                    nextQuestion();
+                }
+                if (isRightSwipe) {
+                    prevQuestion();
+                }
+            };
+
+            const handleSubmit = async () => {
+                if (!email || !email.includes('@')) {
+                    setSubmitError('Please enter a valid email address');
+                    return;
+                }
+
+                if (Object.keys(answers).length !== questions.length) {
+                    setSubmitError('Please complete all questions before submitting');
+                    return;
+                }
+
+                setIsSubmitting(true);
+                setSubmitError('');
+
+                try {
+                    // Check if Supabase client is available
+                    if (!supabase) {
+                        setSubmitError('Unable to connect to database. Please refresh the page and try again.');
+                        return;
+                    }
+
+                    // Save to Supabase user_signups table
+                    const { data, error } = await supabase
+                        .from('user_signups')
+                        .insert([
+                            {
+                                email: email.toLowerCase().trim(),
+                                answers: answers,
+                                signup_source: 'landing_page'
+                            }
+                        ])
+                        .select();
+
+                    if (error) {
+                        console.error('Supabase error:', error);
+                        console.error('Error details:', JSON.stringify(error, null, 2));
+                        
+                        if (error.code === '23505') {
+                            setSubmitError('This email is already registered. Please use a different email.');
+                        } else if (error.message) {
+                            setSubmitError(`Database error: ${error.message}`);
+                        } else {
+                            setSubmitError('There was an error saving your information. Please try again.');
+                        }
+                        return;
+                    }
+
+                    console.log('Successfully saved user signup:', data);
+                    setShowSuccess(true);
+                } catch (error) {
+                    console.error('Error submitting form:', error);
+                    console.error('Error details:', error.message || error);
+                    setSubmitError(`Connection error: ${error.message || 'Please try again.'}`);
+                } finally {
+                    setIsSubmitting(false);
+                }
+            };
+
+            if (showSuccess) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-600 to-purple-600 flex items-center justify-center p-4 overflow-hidden">
+                        <div className="absolute inset-0 overflow-hidden">
+                            {/* Fireworks Animation */}
+                            {[...Array(12)].map((_, i) => (
+                                <div
+                                    key={`firework-${i}`}
+                                    className="absolute"
+                                    style={{
+                                        left: `${20 + Math.random() * 60}%`,
+                                        top: `${20 + Math.random() * 60}%`,
+                                        animationDelay: `${i * 0.5}s`
+                                    }}
+                                >
+                                    <div className="relative">
+                                        {/* Central burst */}
+                                        <div 
+                                            className="absolute w-2 h-2 bg-white rounded-full animate-ping"
+                                            style={{
+                                                animationDuration: '2s',
+                                                animationDelay: `${i * 0.5}s`
+                                            }}
+                                        />
+                                        
+                                        {/* Firework particles */}
+                                        {[...Array(8)].map((_, j) => {
+                                            const angle = (j * 45) * (Math.PI / 180);
+                                            const distance = 40 + Math.random() * 20;
+                                            const colors = ['#60A5FA', '#C084FC', '#F472B6', '#FBBF24', '#34D399', '#FB7185'];
+                                            
+                                            return (
+                                                <div
+                                                    key={`particle-${j}`}
+                                                    className="absolute w-1 h-1 rounded-full"
+                                                    style={{
+                                                        backgroundColor: colors[Math.floor(Math.random() * colors.length)],
+                                                        transform: `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px)`,
+                                                        opacity: 0,
+                                                        animation: `fireworkParticle 2s ease-out ${i * 0.5 + 0.2}s forwards`
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                            
+                            {/* Floating celebration elements */}
+                            {[...Array(20)].map((_, i) => (
+                                <div
+                                    key={`float-${i}`}
+                                    className="absolute animate-celebrate"
+                                    style={{
+                                        left: `${Math.random() * 100}%`,
+                                        top: `100%`,
+                                        animationDelay: `${Math.random() * 4}s`,
+                                        animationDuration: `${4 + Math.random() * 2}s`
+                                    }}
+                                >
+                                    <Sparkles className="text-white opacity-70" size={16 + Math.random() * 10} />
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl p-12 max-w-lg w-full text-center transform transition-all duration-700 scale-100 hover:scale-105 border border-white/20 relative z-10">
+                            <div className="mb-6 relative">
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-32 h-32 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full blur-3xl opacity-50 animate-pulse"></div>
+                                </div>
+                                <RocketIcon />
+                            </div>
+                            
+                            <h2 className="text-4xl font-bold text-white mb-4">Congratulations! 🎉</h2>
+                            <h3 className="text-xl font-semibold text-blue-200 mb-6">You're on the waitlist!</h3>
+                            
+                            <p className="text-white/90 mb-8 leading-relaxed text-lg">
+                                Thank you for your interest in Landed! We're currently in the development process building something amazing for you. 
+                                <br/><br/>
+                                We'll notify you as soon as we're ready for beta testing. Get ready to transform your job search!
+                            </p>
+                            
+                            <button 
+                                onClick={() => window.location.reload()}
+                                className="bg-white text-blue-600 px-10 py-4 rounded-full font-semibold text-lg hover:bg-blue-50 transition-all transform hover:scale-110 shadow-xl group"
+                            >
+                                <span className="flex items-center gap-2">
+                                    Back to Landed
+                                    <ArrowRight className="group-hover:translate-x-2 transition-transform" size={20} />
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (showQuestionnaire) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-blue-900 flex items-center justify-center p-4 relative overflow-hidden">
+                        <div className="absolute inset-0 overflow-hidden opacity-30">
+                            <div 
+                                className="absolute w-[150%] h-[150%] -top-1/4 -left-1/4 animate-liquid-slow"
+                                style={{
+                                    background: 'radial-gradient(ellipse at center, rgba(96, 165, 250, 0.3) 0%, transparent 60%)',
+                                    filter: 'blur(60px)',
+                                    width: '150%',
+                                    height: '150%',
+                                    top: '-25%',
+                                    left: '-25%'
+                                }}
+                            />
+                            <div 
+                                className="absolute w-[150%] h-[150%] -bottom-1/4 -right-1/4 animate-liquid-medium"
+                                style={{
+                                    background: 'radial-gradient(ellipse at center, rgba(167, 139, 250, 0.3) 0%, transparent 60%)',
+                                    filter: 'blur(60px)',
+                                    width: '150%',
+                                    height: '150%',
+                                    bottom: '-25%',
+                                    right: '-25%'
+                                }}
+                            />
+                        </div>
+                        
+                        <div 
+                            className="bg-white/5 backdrop-blur-xl rounded-3xl shadow-2xl p-8 max-w-2xl w-full border border-white/10 transform transition-all duration-500 relative z-10 swipe-container"
+                            onTouchStart={onTouchStart}
+                            onTouchMove={onTouchMove}
+                            onTouchEnd={onQuestionTouchEnd}
+                        >
+                            <div className="mb-8">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-white">Let's build your Landed profile</h2>
+                                    <span className="text-sm text-white/60 bg-white/10 px-3 py-1 rounded-full">{currentQuestion + 1} of {questions.length}</span>
+                                </div>
+                                <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+                                    <div 
+                                        className="bg-gradient-to-r from-blue-400 to-purple-400 h-3 rounded-full transition-all duration-700 ease-out shadow-lg"
+                                        style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="mb-8">
+                                <h3 className="text-xl font-semibold text-white mb-6 animate-fade-in">
+                                    {questions[currentQuestion].question}
+                                </h3>
+                                <div className="grid gap-3">
+                                    {questions[currentQuestion].options.map((option, index) => (
+                                        <button
+                                            key={index}
+                                            onClick={() => handleAnswer(option)}
+                                            className="group w-full text-left p-4 rounded-2xl border-2 border-white/10 bg-white/5 hover:bg-white/10 hover:border-blue-400/50 transition-all duration-300 font-medium text-white hover:text-white transform hover:scale-105 hover:translate-x-2 backdrop-blur-sm"
+                                            style={{ animationDelay: `${index * 0.1}s` }}
+                                        >
+                                            <span className="flex items-center justify-between">
+                                                {option}
+                                                <ArrowRight className="opacity-0 group-hover:opacity-100 transition-opacity duration-300" size={20} />
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (Object.keys(answers).length === questions.length) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 flex items-center justify-center p-4 relative overflow-hidden">
+                        <div className="absolute inset-0 overflow-hidden">
+                            <div className="absolute inset-0">
+                                <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                                    <defs>
+                                        <linearGradient id="wave-gradient-1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.3" />
+                                            <stop offset="50%" stopColor="#A78BFA" stopOpacity="0.2" />
+                                            <stop offset="100%" stopColor="#EC4899" stopOpacity="0.3" />
+                                        </linearGradient>
+                                        <linearGradient id="wave-gradient-2" x1="100%" y1="0%" x2="0%" y2="100%">
+                                            <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.2" />
+                                            <stop offset="50%" stopColor="#C084FC" stopOpacity="0.3" />
+                                            <stop offset="100%" stopColor="#F472B6" stopOpacity="0.2" />
+                                        </linearGradient>
+                                    </defs>
+                                    <path
+                                        d="M0,50 Q25,30 50,50 T100,50 L100,100 L0,100 Z"
+                                        fill="url(#wave-gradient-1)"
+                                    >
+                                        <animateTransform
+                                            attributeName="transform"
+                                            type="translate"
+                                            values="0,0; -50,0; 0,0"
+                                            dur="10s"
+                                            repeatCount="indefinite"
+                                        />
+                                        <animate
+                                            attributeName="d"
+                                            values="M0,50 Q25,30 50,50 T100,50 L100,100 L0,100 Z;
+                                                    M0,40 Q25,60 50,40 T100,40 L100,100 L0,100 Z;
+                                                    M0,50 Q25,30 50,50 T100,50 L100,100 L0,100 Z"
+                                            dur="7s"
+                                            repeatCount="indefinite"
+                                        />
+                                    </path>
+                                    <path
+                                        d="M0,60 Q33,40 66,60 T100,60 L100,100 L0,100 Z"
+                                        fill="url(#wave-gradient-2)"
+                                    >
+                                        <animateTransform
+                                            attributeName="transform"
+                                            type="translate"
+                                            values="0,0; 50,0; 0,0"
+                                            dur="12s"
+                                            repeatCount="indefinite"
+                                        />
+                                        <animate
+                                            attributeName="d"
+                                            values="M0,60 Q33,40 66,60 T100,60 L100,100 L0,100 Z;
+                                                    M0,70 Q33,50 66,70 T100,70 L100,100 L0,100 Z;
+                                                    M0,60 Q33,40 66,60 T100,60 L100,100 L0,100 Z"
+                                            dur="9s"
+                                            repeatCount="indefinite"
+                                        />
+                                    </path>
+                                </svg>
+                            </div>
+                            
+                            {[...Array(6)].map((_, i) => (
+                                <div
+                                    key={`blob-${i}`}
+                                    className="absolute animate-float-blob"
+                                    style={{
+                                        left: `${20 + (i * 15)}%`,
+                                        top: `${10 + (i * 10)}%`,
+                                        animationDelay: `${i * 1.5}s`,
+                                        animationDuration: `${15 + i * 2}s`
+                                    }}
+                                >
+                                    <div 
+                                        className="w-32 h-32 rounded-full blur-3xl"
+                                        style={{
+                                            width: '128px',
+                                            height: '128px',
+                                            background: `radial-gradient(circle, ${['#3B82F6', '#A78BFA', '#EC4899', '#60A5FA', '#C084FC', '#F472B6'][i]}40 0%, transparent 70%)`,
+                                            transform: `scale(${1 + i * 0.2})`
+                                        }}
+                                    />
+                                </div>
+                            ))}
+
+                            {[...Array(4)].map((_, i) => (
+                                <div
+                                    key={`ripple-${i}`}
+                                    className="absolute animate-ripple"
+                                    style={{
+                                        left: `${25 + (i * 20)}%`,
+                                        top: `${30 + (i * 15)}%`,
+                                        animationDelay: `${i * 3}s`,
+                                    }}
+                                >
+                                    <div className="w-4 h-4 bg-white/20 rounded-full" />
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl p-8 max-w-md w-full transform transition-all duration-500 hover:scale-105 border border-white/20 relative z-10">
+                            <div className="flex justify-center mb-6 relative">
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-32 h-32 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full blur-3xl opacity-50 animate-pulse"></div>
+                                </div>
+                                <LightningIcon />
+                            </div>
+                            <h2 className="text-3xl font-bold text-white mb-4 text-center">Welcome to Landed!</h2>
+                            <p className="text-white/80 mb-8 text-center">
+                                Drop your email and we'll send your custom Landed game plan in minutes
+                            </p>
+                            <div>
+                                <input
+                                    type="email"
+                                    placeholder="your@email.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full px-6 py-4 rounded-2xl bg-white/20 border-2 border-white/30 text-white placeholder-white/60 focus:border-white focus:bg-white/30 focus:outline-none text-lg mb-2 transition-all duration-300"
+                                    disabled={isSubmitting}
+                                />
+                                {submitError && (
+                                    <p className="text-red-300 text-sm mb-4 text-center animate-fade-in">
+                                        {submitError}
+                                    </p>
+                                )}
+                                <button
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting}
+                                    className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 rounded-2xl font-semibold text-lg hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-2xl hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mb-4"
+                                >
+                                    {isSubmitting ? 'Saving...' : 'Send Me The Landed Plan'}
+                                </button>
+                            </div>
+                            <p className="text-xs text-white/60 text-center mt-6">
+                                Landed - No spam, just help. Promise.
+                            </p>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 overflow-hidden">
+                    <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                        <div 
+                            className="absolute animate-liquid-slow"
+                            style={{
+                                width: '200%',
+                                height: '200%',
+                                top: '-50%',
+                                left: '-50%',
+                                background: 'radial-gradient(ellipse at center, rgba(59, 130, 246, 0.15) 0%, transparent 70%)',
+                                filter: 'blur(40px)',
+                            }}
+                        />
+                        <div 
+                            className="absolute animate-liquid-medium"
+                            style={{
+                                width: '200%',
+                                height: '200%',
+                                bottom: '-50%',
+                                right: '-50%',
+                                background: 'radial-gradient(ellipse at center, rgba(167, 139, 250, 0.15) 0%, transparent 70%)',
+                                filter: 'blur(40px)',
+                            }}
+                        />
+                        <div 
+                            className="absolute animate-liquid-fast"
+                            style={{
+                                width: '200%',
+                                height: '200%',
+                                top: '25%',
+                                left: '25%',
+                                background: 'radial-gradient(ellipse at center, rgba(236, 72, 153, 0.15) 0%, transparent 70%)',
+                                filter: 'blur(40px)',
+                            }}
+                        />
+                        
+                        {[...Array(20)].map((_, i) => (
+                            <div
+                                key={`particle-${i}`}
+                                className="absolute w-1 h-1 bg-white/30 rounded-full animate-flow-particle"
+                                style={{
+                                    left: `${Math.random() * 100}%`,
+                                    top: `${Math.random() * 100}%`,
+                                    animationDelay: `${Math.random() * 20}s`,
+                                    animationDuration: `${20 + Math.random() * 10}s`
+                                }}
+                            />
+                        ))}
+                    </div>
+
+                    <div className="container mx-auto px-4 py-16 relative z-10">
+                        <div className="text-center mb-16 animate-fade-in">
+                            <div className="mb-8">
+                                <h2 className="text-5xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 mb-3">
+                                    Landed
+                                </h2>
+                                <p className="text-white/60 text-base">Your personal job search copilot</p>
+                            </div>
+                            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
+                                Tired of Getting
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400"> Ghosted?</span>
+                            </h1>
+                            <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
+                                We get it. Hundreds of applications, zero responses. Landed gives you a clear roadmap that actually works: 
+                                Fix your basics → Match with real opportunities → Nail your interviews.
+                            </p>
+                            <button
+                                onClick={() => setShowQuestionnaire(true)}
+                                onMouseEnter={() => setIsHovering(true)}
+                                onMouseLeave={() => setIsHovering(false)}
+                                className="relative bg-gradient-to-r from-blue-500 to-purple-500 text-white px-12 py-5 rounded-full font-semibold text-lg hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-110 shadow-2xl hover:shadow-purple-500/50 group"
+                            >
+                                <span className="relative z-10">Get Started - Take 2min Survey</span>
+                                <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+                                {isHovering && (
+                                    <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-md opacity-75 group-hover:opacity-100 transition duration-200" />
+                                )}
+                            </button>
+                        </div>
+
+                        <div className="max-w-4xl mx-auto mb-16">
+                            <h2 className="text-3xl font-bold text-center text-white mb-12 animate-fade-in">
+                                How Landed Fixes Your Job Search (Click to Learn More)
+                            </h2>
+                            <p className="text-white/50 text-sm text-center mb-8 animate-fade-in">
+                                👆 Click the arrows or swipe left/right to navigate
+                            </p>
+                            <div 
+                                className="relative bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl p-8 md:p-12 border border-white/20 transform transition-all duration-500 hover:scale-[1.02] swipe-container"
+                                onTouchStart={onTouchStart}
+                                onTouchMove={onTouchMove}
+                                onTouchEnd={onTouchEnd}
+                            >
+                                <div className="flex items-center justify-between mb-8">
+                                    <button
+                                        onClick={prevFeature}
+                                        className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all transform hover:scale-110 backdrop-blur-sm"
+                                    >
+                                        <ChevronLeft className="w-6 h-6 text-white" />
+                                    </button>
+                                    <div className="flex gap-2">
+                                        {features.map((_, index) => (
+                                            <div
+                                                key={index}
+                                                className={`h-2 rounded-full transition-all duration-500 ${
+                                                    index === currentFeature ? 'w-12 bg-gradient-to-r from-blue-400 to-purple-400' : 'w-2 bg-white/30'
+                                                }`}
+                                            />
+                                        ))}
+                                    </div>
+                                    <button
+                                        onClick={nextFeature}
+                                        className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all transform hover:scale-110 backdrop-blur-sm"
+                                    >
+                                        <ChevronRight className="w-6 h-6 text-white" />
+                                    </button>
+                                </div>
+                                
+                                <div key={currentFeature} className="text-center">
+                                    <div className="flex justify-center items-center gap-4 mb-6">
+                                        <div className="bg-gradient-to-r from-blue-400 to-purple-400 text-white w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-2xl transform rotate-3 hover:rotate-6 transition-transform">
+                                            {currentFeature + 1}
+                                        </div>
+                                        <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-sm">
+                                            {features[currentFeature].iconType === "target" && <Target className="w-12 h-12 text-white" />}
+                                            {features[currentFeature].iconType === "briefcase" && <Briefcase className="w-12 h-12 text-white" />}
+                                            {features[currentFeature].iconType === "award" && <Award className="w-12 h-12 text-white" />}
+                                        </div>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-white mb-4">
+                                        {features[currentFeature].title}
+                                    </h3>
+                                    <p className="text-white/80 text-lg max-w-2xl mx-auto mb-6">
+                                        {features[currentFeature].description}
+                                    </p>
+                                    {features[currentFeature].dropdowns && (
+                                        <div className="space-y-3 mt-8 max-w-2xl mx-auto">
+                                            <p className="text-white/50 text-xs text-center mb-4 animate-pulse">Click to expand each section ✨</p>
+                                            {features[currentFeature].dropdowns.map((dropdown, index) => {
+                                                const isOpen = openDropdowns[`${currentFeature}-${index}`];
+                                                return (
+                                                    <div 
+                                                        key={index} 
+                                                        className={`bg-white/5 backdrop-blur-sm rounded-2xl overflow-hidden transition-all duration-300 hover:bg-white/10 border hover:border-white/20 hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer animate-fade-in ${
+                                                            isOpen ? 'border-blue-400/50 bg-white/10' : 'border-white/10'
+                                                        }`}
+                                                        style={{ animationDelay: `${index * 0.1}s` }}
+                                                    >
+                                                        <button
+                                                            onClick={() => toggleDropdown(currentFeature, index)}
+                                                            className="w-full px-6 py-4 flex items-center justify-between text-left transition-all duration-300 group"
+                                                        >
+                                                            <span className="flex items-center gap-2">
+                                                                <span className="text-white font-medium group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:to-purple-400 transition-all duration-300">
+                                                                    {dropdown.title}
+                                                                </span>
+                                                                {index === 0 && currentFeature === 0 && (
+                                                                    <span className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs px-2 py-0.5 rounded-full">NEW</span>
+                                                                )}
+                                                                {index === 0 && currentFeature === 1 && (
+                                                                    <span className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs px-2 py-0.5 rounded-full animate-pulse">HOT</span>
+                                                                )}
+                                                            </span>
+                                                            <ChevronDown 
+                                                                className={`w-5 h-5 text-white/60 transition-transform duration-300 group-hover:text-white ${isOpen ? 'rotate-180' : ''}`} 
+                                                            />
+                                                        </button>
+                                                        <div 
+                                                            className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-96 bg-gradient-to-b from-transparent to-white/5' : 'max-h-0'}`}
+                                                        >
+                                                            <div className={`px-6 pb-4 text-white/80 text-base leading-relaxed ${isOpen ? 'animate-dropdown' : ''}`}>
+                                                                {dropdown.content}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-16">
+                            {[
+                                { stat: "73%", desc: "Actually get interviews" },
+                                { stat: "2 weeks", desc: "Average time to first interview" },
+                                { stat: "No BS", desc: "Just stuff that actually works" }
+                            ].map((item, index) => (
+                                <div 
+                                    key={index}
+                                    className="text-center transform hover:scale-110 transition-all duration-300 animate-fade-in"
+                                    style={{ animationDelay: `${index * 0.2}s` }}
+                                >
+                                    <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 mb-2">
+                                        {item.stat}
+                                    </div>
+                                    <p className="text-white/80">{item.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="text-center bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-xl rounded-3xl p-12 max-w-4xl mx-auto border border-white/20 transform hover:scale-105 transition-all duration-500">
+                            <h2 className="text-3xl font-bold text-white mb-4">
+                                Done Being the Friend Without an Internship?
+                            </h2>
+                            <p className="text-white/80 text-lg mb-8">
+                                While everyone else posts their offer letters, you're still sending applications into the void. 
+                                Landed changes that.
+                            </p>
+                            <button
+                                onClick={() => setShowQuestionnaire(true)}
+                                className="bg-white text-blue-600 px-10 py-4 rounded-full font-semibold text-lg hover:bg-blue-50 transition-all transform hover:scale-110 hover:rotate-1 shadow-2xl group"
+                            >
+                                <span className="flex items-center gap-2">
+                                    Join Landed - Take Survey
+                                    <ArrowRight className="group-hover:translate-x-2 transition-transform" size={20} />
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html> 
