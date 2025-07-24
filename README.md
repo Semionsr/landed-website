@@ -5,7 +5,7 @@ A beautiful, animated landing page for the Landed job search platform built with
 ## 🌐 **Connecting to landed.quest Domain**  
  
 ### Option 1: GitHub Pages (Recommended - Free)  
-
+  
 1. **Create a GitHub repository:**
    - Go to GitHub and create a new repository named `landed-website`
    - Make it public
