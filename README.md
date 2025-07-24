@@ -1,6 +1,6 @@
 # Landed - Job Search Landing Page
 
-A beautiful, animated landing page for the Landed job search platform built with React, Tailwind CSS, and Lucide icons.
+A beautiful, animated landing page for the Landed job search platform built with React, Tailwind CSS, and Lucide icons.  
 
 ## 🌐 **Connecting to landed.quest Domain**  
 
