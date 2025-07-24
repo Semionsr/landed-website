@@ -3,7 +3,7 @@
 A beautiful, animated landing page for the Landed job search platform built with React, Tailwind CSS, and Lucide icons.  
 
 ## 🌐 **Connecting to landed.quest Domain**  
- 
+  
 ### Option 1: GitHub Pages (Recommended - Free)  
   
 1. **Create a GitHub repository:**
